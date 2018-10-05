@@ -4,7 +4,7 @@ args=()
 if [ "$1" == "--help" ]; then
   echo 'Workflow variables:'
   echo 'Name Type'
-  cat $HOME_DIR/meta
+  cat $HOME/meta
 else
   for var in "$@"
   do
@@ -13,7 +13,7 @@ else
       # Extract the type
       value=$(echo $var | awk -F '=' '{print $2}')
       # Get the type from the meta file
-      type=$(cat $HOME_DIR/meta | grep $name | awk -F ' ' '{print $2}')
+      type=$(cat $HOME/meta | grep $name | awk -F ' ' '{print $2}')
       # Add argument to the array
       args=("${args[@]}" "-workflow.variable=$name,\"$value\",$type")
       #\\\"
@@ -23,6 +23,6 @@ else
 
   # Call KNIME with the arguments
   $KNIME_DIR/knime -configuration $HOME/configuration -data $HOME -user $HOME -nosplash -nosave -application org.knime.product.KNIME_BATCH_APPLICATION \
-    -workflowDir="$HOME_DIR/workflow" \
+    -workflowDir="/payload/workflow" \
     "${args[@]}"
 fi
