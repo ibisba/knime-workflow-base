@@ -2,22 +2,24 @@
 
 import sys
 import xml.etree.ElementTree as ET
+import os
+from distutils.version import LooseVersion
 
-file=sys.argv[1]
+# Find versions of the contained workflows
+highest = None
+# Get all workflow.knime files in the folder
+folder = sys.argv[1]
+for root, dirs, files in os.walk(folder):
+    for name in files:
+        if name == "workflow.knime":
+            tree = ET.parse(os.path.join(root, name))
+            root = tree.getroot()
+            for child in root:
+                if child.attrib['key'] == 'created_by':
+                    version = LooseVersion(child.attrib['value'])
+                    if highest is None or version > highest:
+                        highest = version
+                    break
 
-tree = ET.parse(file)
-root = tree.getroot()
-
-knime_version = None
-
-for child in root:
-        if child.attrib['key'] == 'created_by':
-            knime_version = child.attrib['value']
-            break
-
-
-#print 'version\t' + knime_version[0:knime_version.rfind(".")]
-#print 'update_site\t' + 'http://update.knime.org/analytics-platform/' \
-#        + knime_version[0:knime_version.find(".", knime_version.find(".") + 1)] + "/"
-
-print  knime_version[0:knime_version.rfind(".")]
+highest = str(highest)
+print highest[0:highest.rfind(".")]

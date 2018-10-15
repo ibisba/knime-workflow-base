@@ -1,45 +1,38 @@
-FROM knime/knime:3.6.1
+FROM ibisba/knime:3.6.1
 
-USER root
-WORKDIR $HOME_DIR
+# Build argument for the workflow directory
+ONBUILD ARG WORKFLOW_DIR="workflow/"
+# Build argument for additional update sites
+ONBUILD ARG UPDATE_SITES
 
 # Create workflow directory and copy from host
-ONBUILD RUN mkdir -p workflow
-ONBUILD COPY workflow workflow/
+ONBUILD RUN mkdir -p /payload/workflow
+ONBUILD COPY $WORKFLOW_DIR /payload/workflow
 
 # Copy necessary scripts onto the image
-COPY listplugins.py listplugins.py
-COPY getversion.py getversion.py
-COPY listvariables.py listvariables.py
-COPY run.sh run.sh
+COPY getversion.py /scripts/getversion.py
+COPY listvariables.py /scripts/listvariables.py
+COPY listplugins.py /scripts/listplugins.py
+COPY run.sh /scripts/run.sh
 
-# Let user knime run the workflow
-RUN chmod 755 run.sh
+# Let anyone run the workflow
+RUN chmod +x /scripts/run.sh
 
 # Add KNIME update site and trusted community update site that fit the version the workflow was created with
-ONBUILD RUN echo "http://update.knime.org/analytics-platform/$(python getversion.py workflow/workflow.knime | awk '{split($0,a,"."); print a[1]"."a[2]}')" >> updatesites
-ONBUILD RUN echo "http://update.knime.org/community-contributions/trusted/$(python getversion.py workflow/workflow.knime | awk '{split($0,a,"."); print a[1]"."a[2]}')" >> updatesites
-
-ONBUILD RUN cat updatesites
+ONBUILD RUN full_version=$(python /scripts/getversion.py /payload/workflow/) \
+&& version=$(python /scripts/getversion.py /payload/workflow/ | awk '{split($0,a,"."); print a[1]"."a[2]}') \
+&& echo "http://update.knime.org/analytics-platform/$version" >> /payload/meta/updatesites \
+&& echo "http://update.knime.org/community-contributions/trusted/$version" >> /payload/meta/updatesites \
+# Add user provided update sites
+&& echo $UPDATE_SITES | tr ',' '\n' >> /payload/meta/updatesites
 
 # Save the workflow's variables in a file
-ONBUILD RUN python listvariables.py workflow/workflow.knime > meta
+ONBUILD RUN find /payload/workflow -name settings.xml -exec python /scripts/listplugins.py {} \; | sort -u | awk '!a[$0]++' > /payload/meta/features
 
-# Find required features
-ONBUILD RUN find workflow -name settings.xml -exec python listplugins.py {} \; | sort -u > features
-
-# Update org.knime.product.desktop
-#RUN $KNIME_DIR/knime -application org.eclipse.equinox.p2.director \
-#-r $(cat updatesites | tr '\n' ',' | sed 's/,*$//' | sed 's/^,*//') \
-#-p2.arch x86_64 \
-#-profileProperties org.eclipse.update.install.features=true \
-#-i "org.knime.product.desktop" \
-#-u "org.knime.product.desktop" \
-#-p KNIMEProfile \
-#-nosplash
+ONBUILD RUN python /scripts/listvariables.py /payload/workflow
 
 # Install required features
-ONBUILD RUN $KNIME_DIR/knime -application org.eclipse.equinox.p2.director \
+ONBUILD RUN "$KNIME_DIR/knime" -application org.eclipse.equinox.p2.director \
 -r $(cat updatesites | tr '\n' ',' | sed 's/,*$//' | sed 's/^,*//') \
 -p2.arch x86_64 \
 -profileProperties org.eclipse.update.install.features=true \
@@ -48,9 +41,6 @@ ONBUILD RUN $KNIME_DIR/knime -application org.eclipse.equinox.p2.director \
 -nosplash
 
 # Cleanup
-ONBUILD RUN rm listplugins.py && rm getversion.py
+ONBUILD RUN rm /scripts/getversion.py && rm /scripts/listvariables.py && rm /scripts/listplugins.py
 
-# For inspection of the log file.
-# RUN tail -n 30 -f $(find /usr/local/knime_3.1.2/configuration/*.log -printf "%T@ %p\n" | sort -n | tail -n 1 | cut -d' ' -f 2-)
-
-ENTRYPOINT ["/home/knime/run.sh"]
+ENTRYPOINT ["/scripts/run.sh"]

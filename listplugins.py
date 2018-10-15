@@ -23,8 +23,8 @@ for child in root:
             break
 
 # org.knime.features.base.feature.group is bound to the org.knime.product.desktop
-if feature != None and feature != "org.knime.features.base.feature.group":
-    if (version):
+if feature != None and feature != "org.knime.features.base.feature.group" and feature != None:
+    if version:
         print feature + '/' + version
     else:
         print feature
