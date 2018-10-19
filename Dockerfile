@@ -1,4 +1,4 @@
-FROM ibisba/knime:3.6.1
+FROM ibisba/knime-base:3.6.1-0
 
 # Build argument for the workflow directory
 ONBUILD ARG WORKFLOW_DIR="workflow/"
