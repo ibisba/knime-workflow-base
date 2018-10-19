@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-V1.1
+V1.2
 
 Modification in recurse:
 Recursion to old folders is made independent if found .knime data or not
@@ -28,14 +28,13 @@ def listWorkflows(folder):
 
 def recurse(f, list):
     content = listdir(f)
-    isWorkflow = False
-    for c in content:
-        path = join(f,c)
-        if isfile(path) and c == "workflow.knime" and "settings.xml" not in content :
-            isWorkflow = True
-	elif not isfile(path):
-            recurse(path, list)
-    if isWorkflow:
+    isWorkflow = ("workflow.knime" in content) and ("settings.xml" not in content)
+    if not isWorkflow:
+        for c in content:
+            path = join(f,c)
+            if not isfile(path):
+                recurse(path, list)
+    else:
         list.append(f)
 
 def createVarFile(workflowknime, outfile):
