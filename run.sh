@@ -83,7 +83,7 @@ if [[ $execute == 1 && $n -gt 0 ]] ; then
 	  #\\\"
     done
     # Call KNIME with the arguments
-    WORKDIR="${pwd}"
+    WORKDIR="$(pwd)"
     $KNIME_DIR/knime -configuration $WORKDIR/configuration -data $WORKDIR -user $WORKDIR -nosplash -nosave -application org.knime.product.KNIME_BATCH_APPLICATION \
       -workflowDir="/payload/workflow/$workflow" \
       "${args[@]}"
