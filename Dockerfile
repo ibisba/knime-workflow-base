@@ -6,8 +6,11 @@ ONBUILD ARG WORKFLOW_DIR="workflow/"
 ONBUILD ARG UPDATE_SITES
 
 # Create workflow directory and copy from host
-ONBUILD RUN mkdir -p /payload/workflow
+ONBUILD RUN mkdir -p /payload
 ONBUILD COPY $WORKFLOW_DIR /payload/workflow
+
+# Create metadata directory
+ONBUILD RUN mkdir -p /payload/meta
 
 # Copy necessary scripts onto the image
 COPY getversion.py /scripts/getversion.py
@@ -33,10 +36,10 @@ ONBUILD RUN python /scripts/listvariables.py /payload/workflow
 
 # Install required features
 ONBUILD RUN "$KNIME_DIR/knime" -application org.eclipse.equinox.p2.director \
--r $(cat updatesites | tr '\n' ',' | sed 's/,*$//' | sed 's/^,*//') \
+-r "$(cat /payload/meta/updatesites | tr '\n' ',' | sed 's/,*$//' | sed 's/^,*//')" \
 -p2.arch x86_64 \
 -profileProperties org.eclipse.update.install.features=true \
--i "$(cat features | tr '\n' ',' | sed 's/,*$//' | sed 's/^,*//')" \
+-i "$(cat /payload/meta/features | tr '\n' ',' | sed 's/,*$//' | sed 's/^,*//')" \
 -p KNIMEProfile \
 -nosplash
 
