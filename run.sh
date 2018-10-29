@@ -47,7 +47,7 @@ n=$(find /payload/workflow -name "dockermeta.knime" |wc -l)
 
 #check for amount of workspace
 if [ $n == 0 ]; then
- echo "NON WORKSPACE FOUND. Check if the workflow directory is correctly specified"
+ echo "No workflow found. Check if the workflow directory was correctly specified during the build."
 elif [ $n == 1 ]; then
  wrk="${@:1}"
  workflow=""
@@ -59,7 +59,7 @@ elif [ $n -gt 1 ]; then
  # Check if file exists
  if [[ $execute == 1 && ! -f "/payload/workflow/$workflow/dockermeta.knime" ]]
  then
-    >&2 echo "Workflow not found. Check the name of the workflow."
+    >&2 echo "Workflow not found. Check the workflow name. Run the image with --info to see the contained workflows."
     n=0
  fi
 fi
