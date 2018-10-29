@@ -27,7 +27,7 @@ elif [ "$workflow" = "--info" ]; then
     echo "-----------------------------------------------------"
     echo "Installed features:"
     echo "-----------------------------------------------------"
-    cat features
+    cat /payload/meta/features
     execute=0
 elif [ "$workflow" = "--help" ]; then
     echo "Help:"
