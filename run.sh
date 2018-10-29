@@ -12,7 +12,9 @@ if [ "$workflow" = "--vars" ]; then
     echo "Workflow variables needed for executing the workflows:"
     echo "-----------------------------------------------------"
     while IFS=  read -r -d $'\0'; do
-      echo "$(dirname ${REPLY#./workflow/})"
+      # Cut off the "/payload/"" part because the user does not have to specify it
+      name="$(dirname ${REPLY#./workflow/})"
+      echo "${name:9}"
       echo -e 'Name\tType\tDefault Value'
       cat "$REPLY" | tr ':' '\t'
       echo "========"
@@ -22,7 +24,8 @@ elif [ "$workflow" = "--info" ]; then
     echo "Workflows:"
     echo "-----------------------------------------------------"
     while IFS=  read -r -d $'\0'; do
-      echo "$(dirname ${REPLY#./workflow/})"
+      name="$(dirname ${REPLY#./workflow/})"
+      echo "${name:9}"
     done < <(find "/payload/workflow" -name dockermeta.knime -print0)
     echo "-----------------------------------------------------"
     echo "Installed features:"
@@ -63,7 +66,6 @@ elif [ $n -gt 1 ]; then
     n=0
  fi
 fi
-
 
 if [[ $execute == 1 && $n -gt 0 ]] ; then
     for var in $wrk
