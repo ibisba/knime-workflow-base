@@ -7,26 +7,31 @@ args=()
 workflow=$1
 declare -i multi_wrk=0
 declare -i execute=1
+n=$(find /payload/workflow -name "dockermeta.knime" |wc -l)
 
 if [ "$workflow" = "--vars" ]; then
     echo "Workflow variables needed for executing the workflows:"
     echo "-----------------------------------------------------"
     while IFS=  read -r -d $'\0'; do
-      # Cut off the "/payload/"" part because the user does not have to specify it
-      name="$(dirname ${REPLY#./workflow/})"
-      echo "${name:9}"
+      # Cut off the "/payload/workflow/" part because the user does not have to specify it.
+      if [ $n -gt 1 ]; then
+        name="$(dirname ${REPLY#./workflow/})"
+        echo "${name:18}"
+      fi
       echo -e 'Name\tType\tDefault Value'
       cat "$REPLY" | tr ':' '\t'
       echo "========"
     done < <(find "/payload/workflow" -name dockermeta.knime -print0)
     execute=0
 elif [ "$workflow" = "--info" ]; then
-    echo "Workflows:"
-    echo "-----------------------------------------------------"
-    while IFS=  read -r -d $'\0'; do
-      name="$(dirname ${REPLY#./workflow/})"
-      echo "${name:9}"
-    done < <(find "/payload/workflow" -name dockermeta.knime -print0)
+    if [ $n -gt 1 ]; then
+        echo "Workflows:"
+        echo "-----------------------------------------------------"
+        while IFS=  read -r -d $'\0'; do
+        name="$(dirname ${REPLY#./workflow/})"
+        echo "${name:18}"
+        done < <(find "/payload/workflow" -name dockermeta.knime -print0)
+    fi
     echo "-----------------------------------------------------"
     echo "Installed features:"
     echo "-----------------------------------------------------"
@@ -35,18 +40,25 @@ elif [ "$workflow" = "--info" ]; then
 elif [ "$workflow" = "--help" ]; then
     echo "Help:"
     echo "To run the image and mount a folder in the container:"
-    echo "docker run -v <local_folder>:<container_folder> <image_name> <workflow_path> <workflow_variable_name>=<value>"
-    echo "Eg: docker run -v /User/MyUser/Documents/Data:/data myworkflowGroup mySubGroup/myworkflow input_file=test.csv"
+    if [ $n -gt 1 ]; then
+        echo "docker run -v <local_folder>:<container_folder> <image_name> <workflow_path> <workflow_variable_name>=<value>"
+        echo "Eg: docker run -v /User/MyUser/Documents/Data:/data myworkflowGroup mySubGroup/myworkflow input_file=test.csv"
+        echo ""
+        echo "To list contained workflows and installed features:"
+        echo "docker run -rm <image_name> --info"
+    elif [ $n == 1 ]; then
+        echo "docker run -v <local_folder>:<container_folder> <image_name> <workflow_variable_name>=<value>"
+        echo "Eg: docker run -v /User/MyUser/Documents/Data:/data myworkflowGroup input_file=test.csv"
+        echo ""
+        echo "To list installed features:"
+        echo "docker run -rm <image_name> --info"
+    fi
     echo ""
     echo "To list the workflows' variables:"
     echo "docker run -rm <image_name> --vars"
-    echo ""
-    echo "To list contained workflows and installed features:"
-    echo "docker run -rm <image_name> --info"
+    
     execute=0
 fi
-
-n=$(find /payload/workflow -name "dockermeta.knime" |wc -l)
 
 #check for amount of workspace
 if [ $n == 0 ]; then
